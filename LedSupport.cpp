@@ -107,8 +107,6 @@ void LedSupport::setDimmer(uint8_t dimmer, uint16_t pin, uint8_t id)
 
 LedRGB LedSupport::updateColor(uint8_t dimmer, LedRGB rgb)
 {
-  Serial.print("Dimmer is: ");
-  Serial.println(dimmer);
   if (dimmer >= 255) {
     return rgb;
   }
