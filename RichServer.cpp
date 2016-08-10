@@ -22,6 +22,11 @@ void handleRoot()
   
 }
 
+void handleSetLedLight()
+{
+  richServerObj->urlSetLedLight();
+}
+
 RichServer::RichServer(int port)
 {
   richServerObj = this;
@@ -29,6 +34,7 @@ RichServer::RichServer(int port)
 
   _espServer.onNotFound(handleNotFound);
   _espServer.on("/temp", handleGetTemp);
+  _espServer.on("/rgb", handleSetLedLight);
   
   _espServer.begin();
 }
@@ -48,19 +54,22 @@ void RichServer::urlNotFound()
   template404();
 }
 
+void RichServer::urlSetLedLight()
+{
+  byte r = _espServer.arg("r").toInt();
+  byte g = _espServer.arg("g").toInt();
+  byte b = _espServer.arg("b").toInt();
+  setBackColorHandler({r, g, b});
+  _espServer.send(200, "text/html", "ok");
+}
+
 void RichServer::urlGetTemp()
 {
   if(getWeatherHandler != NULL) {
     WeatherInfo weather_info = getWeatherHandler();
     String weather = "<table><tbody>";
-    Serial.println(weather);
-    Serial.println(weather_info.size);
     for (int i = 0; i <  weather_info.size; i++) {
        SensorInfo info = weather_info.sensorsInfo[i];
-       Serial.println("info.name");
-       Serial.println(info.name);
-       Serial.println(info.value);
-       Serial.println(info.unit);
        weather += "<tr>";
        weather += "<td>" + info.name + "</td><td>";
        weather += info.value;
@@ -69,6 +78,7 @@ void RichServer::urlGetTemp()
     }
     weather += "</tbody></table>";
     templateOk(weather, "Climate");
+    setMainColorHandler({0,255,0});
   } else {
     template404("No sensors sets", "No Sensors!");
   }
@@ -104,7 +114,7 @@ void RichServer::template404(String content, String title)
   if (title == ""){
     title = "File Not Found!";
   }
-  setColorHandler("404", {123,56,32});
+  setMainColorHandler({123,56,32});
   String response = responseTemplate(content, title);
   _espServer.send(404, "text/html", response);
 }

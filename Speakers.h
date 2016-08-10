@@ -1,6 +1,9 @@
 #ifndef SPEAKERS
 #define SPEAKERS True
-#define SRD_PIN 16
+#define SRD_SRC_PIN 12
+#define SRD_POWER_PIN 15
+#define LED_PIN_MAIN 13
+
 struct LedRGB 
 {
   uint8_t r;
@@ -12,7 +15,7 @@ struct LedPin
 {
   uint16_t pin;
   byte size;
-  byte dimmer;
+  uint8_t* dimmer;
   //Adafruit_NeoPixel strip;
   LedRGB* rgb;
 }; 

@@ -1,9 +1,9 @@
 #include "LedSupport.h"
 
-#define LED_PIN_DEFAULT 14
+#define LED_PIN_DEFAULT 13
 
 // Adafruit_NeoPixel can be only one instance (and only one create!!) in all sketch (problem with timeout interupt after sucessful set color)
-Adafruit_NeoPixel ledStrip = Adafruit_NeoPixel(1, LED_PIN_DEFAULT, NEO_RGB + NEO_KHZ800);// NEO_KHZ800 is for WS2811
+Adafruit_NeoPixel ledStrip = Adafruit_NeoPixel(2, LED_PIN_DEFAULT, NEO_RGB + NEO_KHZ400);// NEO_KHZ400 is for WS2811
 
 LedSupport::LedSupport(byte max_pins)
 {
@@ -20,24 +20,26 @@ void LedSupport::init()
 
 void LedSupport::addLedPin(uint16_t pin, byte pin_size)
 {
-  LedRGB rgb[pin_size];
+  LedPin pinInfo = {pin, pin_size, new uint8_t[pin_size], new LedRGB[pin_size]};
   for (int i = 0; i < pin_size; i++){
-    rgb[i] = {0,0,0};
+    pinInfo.rgb[i] = {0,0,0};
+    pinInfo.dimmer[i] = 255;
   }
-  LedPin pinInfo = {pin, pin_size, 255, rgb};
+  
   
   int id = _pin_count;
   _ledPins[id] = pin;
   _ledPinsInfo[id] = pinInfo;
   _pin_count++;
-  setLedColor(0, 0, {15, 49, 59});
+
 }
 
 void LedSupport::setColor(uint16_t pin, uint16_t id, LedRGB rgb)
 {
   int pin_id = pinId(pin);
   if (pin_id >= 0) {
-    rgb = updateColor(_ledPinsInfo[pin_id].dimmer, rgb);
+    rgb = updateColor(_ledPinsInfo[pin_id].dimmer[id], rgb);
+
     setLedColor(pin_id, id, rgb);
   }
 }
@@ -73,10 +75,9 @@ void LedSupport::setPin(int pin_id)
 void LedSupport::setDimmer(uint8_t dimmer)
 {
   for (int pin_id = 0; pin_id < _pin_count; pin_id++) {
-    LedPin pinInfo = _ledPinsInfo[pin_id];
-    pinInfo.dimmer = dimmer;
     for (int i = 0; i < _ledPinsInfo[pin_id].size; i++) {
-      LedRGB rgb = updateColor(dimmer, pinInfo.rgb[i]);
+      _ledPinsInfo[pin_id].dimmer[i] = dimmer;
+      LedRGB rgb = updateColor(dimmer, _ledPinsInfo[pin_id].rgb[i]);
       setLedColor(pin_id, i, rgb);
     }
   }
@@ -86,17 +87,28 @@ void LedSupport::setDimmer(uint8_t dimmer, uint16_t pin)
 {
   int pin_id = pinId(pin);
   if (pin_id >= 0) {
-    LedPin pinInfo = _ledPinsInfo[pin_id];
-    pinInfo.dimmer = dimmer;
     for (int i = 0; i < _ledPinsInfo[pin_id].size; i++) {
-      LedRGB rgb = updateColor(dimmer, pinInfo.rgb[i]);
+      _ledPinsInfo[pin_id].dimmer[i] = dimmer;
+      LedRGB rgb = updateColor(dimmer, _ledPinsInfo[pin_id].rgb[i]);
       setLedColor(pin_id, i, rgb);
     }
   }
 }
 
+void LedSupport::setDimmer(uint8_t dimmer, uint16_t pin, uint8_t id)
+{
+  int pin_id = pinId(pin);
+  if (pin_id >= 0) {
+    _ledPinsInfo[pin_id].dimmer[id] = dimmer;
+    LedRGB rgb = updateColor(dimmer, _ledPinsInfo[pin_id].rgb[id]);
+    setLedColor(pin_id, id, rgb);
+  }
+}
+
 LedRGB LedSupport::updateColor(uint8_t dimmer, LedRGB rgb)
 {
+  Serial.print("Dimmer is: ");
+  Serial.println(dimmer);
   if (dimmer >= 255) {
     return rgb;
   }

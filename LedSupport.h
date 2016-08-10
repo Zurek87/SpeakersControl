@@ -10,6 +10,7 @@ class LedSupport
     void setColor(uint16_t pin, uint16_t id, LedRGB rgb);
     void setDimmer(uint8_t dimmer);
     void setDimmer(uint8_t dimmer, uint16_t pin);
+    void setDimmer(uint8_t dimmer, uint16_t pin, uint8_t id);
     
  // private:
     void setLedColor(int pin_id, uint16_t id, LedRGB rgb);
