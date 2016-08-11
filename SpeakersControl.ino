@@ -196,13 +196,18 @@ void initRichServer()
   serverRich.getWeatherHandler = getWeather;
 }
 
-void setup(void)
+void initRelayModules()
 {
-  system_update_cpu_freq(SYS_CPU_160MHZ);
   pinMode(SRD_SRC_PIN, OUTPUT);
   pinMode(SRD_POWER_PIN, OUTPUT);
   digitalWrite(SRD_SRC_PIN, HIGH);//select default source
   digitalWrite(SRD_POWER_PIN, HIGH);// power on !!
+}
+
+void setup(void)
+{
+  system_update_cpu_freq(SYS_CPU_160MHZ);
+  initRelayModules();
   
   Serial.begin(115200);
   Serial.println("");
@@ -211,8 +216,6 @@ void setup(void)
   initWiFi();
   initLed();
   initRichServer();
-
-
 
   if (MDNS.begin("esp8266")) {
     Serial.println("MDNS responder started");
