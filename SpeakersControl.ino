@@ -26,6 +26,7 @@
 byte system_status = 1;
 byte error_count = 0;
 byte source = 0;
+byte last_led_color = 255;
 bool power_on = true;
 /*
  * 0 -> normal no errors
@@ -67,37 +68,36 @@ void checkSystem()
  
 }
 
+void setInfoColor(byte i)
+{
+  if (last_led_color == i) return;
+  LedRGB colors[8] = {
+    {0, 0, 0},       // 0 -> if "0" and powerOff
+    {0, 0, 255},     // 1 -> Init in progress
+    {255, 140, 0},   // 2 -> WiFi problem
+    {255, 0, 0},     // 3 -> big error
+    {255, 255, 255}, // 4 white, reserved for future idiea ;) 
+    {45, 255, 215},  // 5 -> if "0" and powerOn and source "0" (PC)
+    {25, 255, 80},   // 6 -> if "0" and powerOn and source "1" (RPi3/Phone)
+    {255, 0, 255}    // 7 -> if powerOff and error (for blinking)
+  };
+  ledSupport.setColor(LED_PIN_MAIN, 0, colors[i]);
+  last_led_color = i;
+}
+
 void setInfoLed()
 {
   if (!power_on and system_status==0) {
-    ledSupport.setColor(LED_PIN_MAIN, 0, {0, 0, 0});
+    setInfoColor(0);
     return;
   }
   if (not (blink or power_on)) {
-    ledSupport.setColor(LED_PIN_MAIN, 0, {255, 0, 255});
-  } else {
-    switch (system_status) {
-      case 0:
-        if (source == 0) {
-          ledSupport.setColor(LED_PIN_MAIN, 0, {45, 255, 215});
-        } else {
-          ledSupport.setColor(LED_PIN_MAIN, 0, {25, 255, 80});
-        }
-        break;
-      case 1:
-        ledSupport.setColor(LED_PIN_MAIN, 0, {0, 0, 255});
-        break;
-      case 2:
-        ledSupport.setColor(LED_PIN_MAIN, 0, {255, 140, 0});
-        break;
-      case 3:
-        ledSupport.setColor(LED_PIN_MAIN, 0, {255, 0, 0});
-        break;
-      default:
-        ledSupport.setColor(LED_PIN_MAIN, 0, {255, 255, 255});
-    }
+    setInfoColor(7);
+  } else if (system_status == 0) {
+    setInfoColor(5 + source);
+  } else if ( system_status < 5){
+    setInfoColor(system_status);
   }
-  
 }
 
 void powerOff()
@@ -125,16 +125,14 @@ void wachdogLed()
 void setMainColor(LedRGB rgb)
 {
   setLedColor(LED_PIN_MAIN, 0, rgb);
+  last_led_color = 255;
   // restet wachdog,: give time to see message :)
   timer0_write(ESP.getCycleCount() + WACHDOG_INTERVAL);
 }
 
 void setBackColor(LedRGB rgb)
 {
-  Serial.println("Back Light");
-  //ledSupport.setColor(LED_PIN_MAIN, 0, {255, 140, 0});
   ledSupport.setColor(LED_PIN_MAIN, 1, rgb);
-  //setLedColor(LED_PIN_MAIN, 1, rgb);
 }
 
 void setLedColor(uint16_t pin, uint8_t id, LedRGB rgb)
@@ -152,7 +150,7 @@ void initLed()
   Serial.println("Init LedSupport");
   ledSupport.init();
   ledSupport.addLedPin(LED_PIN_MAIN, 2);
-  Serial.println("Set Init Collor");
+  
   ledSupport.setColor(LED_PIN_MAIN, 1, {255, 140, 0});
   ledSupport.setDimmer(20, LED_PIN_MAIN, 0);
   setInfoLed();
@@ -180,7 +178,26 @@ void reconnectWiFi()
   WiFi.config(ip, gateway, subnet);
 }
 
-void setup(void){
+void initWachdog() 
+{
+  Serial.println("Init Wachdog");
+  noInterrupts();
+  timer0_isr_init();
+  timer0_attachInterrupt(wachdogLed);
+  timer0_write(ESP.getCycleCount() + WACHDOG_INTERVAL);
+  interrupts();
+}
+
+void initRichServer()
+{
+  Serial.println("Init RichServer");
+  serverRich.setMainColorHandler = setMainColor;
+  serverRich.setBackColorHandler = setBackColor;
+  serverRich.getWeatherHandler = getWeather;
+}
+
+void setup(void)
+{
   system_update_cpu_freq(SYS_CPU_160MHZ);
   pinMode(SRD_SRC_PIN, OUTPUT);
   pinMode(SRD_POWER_PIN, OUTPUT);
@@ -192,35 +209,24 @@ void setup(void){
   Serial.println("Zurek ESP starting!");
 
   initWiFi();
-
   initLed();
-  
-  Serial.println("Init RichServer");
-  serverRich.setMainColorHandler = setMainColor;
-  serverRich.setBackColorHandler = setBackColor;
-  serverRich.getWeatherHandler = getWeather;
+  initRichServer();
+
 
 
   if (MDNS.begin("esp8266")) {
     Serial.println("MDNS responder started");
   }
 
-  Serial.println("Setup End");
-  ledSupport.setColor(LED_PIN_MAIN, 0, {25, 107, 100});
-
-  pinMode(0, INPUT);
-  //attachInterrupt(0, green, CHANGE);
-  //timer0_attachInterrupt(green);
-  noInterrupts();
-  timer0_isr_init();
-  timer0_attachInterrupt(wachdogLed);
-  timer0_write(ESP.getCycleCount() + WACHDOG_INTERVAL);
-  interrupts();
+  initWachdog();
   system_status = 0;
+  
   setInfoLed();
+  Serial.println("Setup End");
 }
 
-void loop(void){
+void loop(void)
+{
   serverRich.handleClient();
 }
 
