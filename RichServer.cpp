@@ -22,6 +22,16 @@ void handleRoot()
   
 }
 
+void handleSetPower()
+{
+  richServerObj->urlSetPower();
+}
+
+void handleSetSource()
+{
+  richServerObj->urlSetSource();
+}
+
 void handleSetLedLight()
 {
   richServerObj->urlSetLedLight();
@@ -35,6 +45,8 @@ RichServer::RichServer(int port)
   _espServer.onNotFound(handleNotFound);
   _espServer.on("/temp", handleGetTemp);
   _espServer.on("/rgb", handleSetLedLight);
+  _espServer.on("/power", handleSetPower);
+  _espServer.on("/source", handleSetSource);
   
   _espServer.begin();
 }
@@ -82,6 +94,25 @@ void RichServer::urlGetTemp()
   } else {
     template404("No sensors sets", "No Sensors!");
   }
+}
+
+
+void RichServer::urlSetPower()
+{
+  if (_espServer.arg("power") == "off"){
+    powerOffHandler();
+  } else {
+    powerOnHandler();
+  }
+  _espServer.send(200, "text/html", "ok");
+}
+
+
+
+void RichServer::urlSetSource()
+{
+  changeSourceHandler(_espServer.arg("source"));
+  _espServer.send(200, "text/html", "ok");
 }
 
 String RichServer::responseTemplate(String content, String title)

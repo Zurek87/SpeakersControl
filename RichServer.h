@@ -7,11 +7,14 @@ class RichServer
     RichServer(int port);
     
     typedef std::function<void(void)> THandlerFunction;
+    typedef std::function<void(String)> THandlerSourceFunction;
     typedef std::function<String(void)> THandlerGetFunction;
     typedef std::function<WeatherInfo(void)> THandlerGetWeather;
     typedef std::function<void(LedRGB)> THandlerRGBFunction;
     
-    
+    THandlerFunction powerOnHandler;
+    THandlerFunction powerOffHandler;
+    THandlerSourceFunction changeSourceHandler;
     THandlerRGBFunction setMainColorHandler;
     THandlerRGBFunction setBackColorHandler;
     THandlerGetWeather getWeatherHandler;
@@ -19,8 +22,9 @@ class RichServer
     void urlNotFound();
     void urlGetTemp();
     void urlGetRoot();
-    void urlSetLed();
     void urlSetLedLight();
+    void urlSetPower();
+    void urlSetSource();
     void handleClient();
     
   private:

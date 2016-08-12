@@ -140,6 +140,17 @@ void setLedColor(uint16_t pin, uint8_t id, LedRGB rgb)
   ledSupport.setColor(pin, id, rgb);
 }
 
+void changeSource(String src)
+{
+  if (src=="PC") {
+    digitalWrite(SRD_SRC_PIN, HIGH);
+    powerOn();
+  } else if(src == "RPi") {
+    digitalWrite(SRD_SRC_PIN, LOW);
+    powerOn();
+  }
+}
+
 WeatherInfo getWeather()
 {
   return weatherStation.getSensorsReading();
@@ -151,7 +162,7 @@ void initLed()
   ledSupport.init();
   ledSupport.addLedPin(LED_PIN_MAIN, 2);
   
-  ledSupport.setColor(LED_PIN_MAIN, 1, {255, 140, 0});
+  //ledSupport.setColor(LED_PIN_MAIN, 1, {255, 140, 0});
   ledSupport.setDimmer(20, LED_PIN_MAIN, 0);
   setInfoLed();
   Serial.println("LedSupport Initialized");
@@ -191,9 +202,12 @@ void initWachdog()
 void initRichServer()
 {
   Serial.println("Init RichServer");
+  serverRich.powerOffHandler = powerOff;
+  serverRich.powerOnHandler = powerOn;
   serverRich.setMainColorHandler = setMainColor;
   serverRich.setBackColorHandler = setBackColor;
   serverRich.getWeatherHandler = getWeather;
+  serverRich.changeSourceHandler = changeSource;
 }
 
 void initRelayModules()
