@@ -13,7 +13,6 @@ struct LedRGB
 
 struct LedPin 
 {
-  uint16_t pin;
   byte size;
   uint8_t* dimmer;
   //Adafruit_NeoPixel strip;
@@ -35,3 +34,4 @@ struct WeatherInfo
   SensorInfo* sensorsInfo;
 };
 #endif
+

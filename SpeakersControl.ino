@@ -72,7 +72,7 @@ void setInfoColor(byte i)
 {
   if (last_led_color == i) return;
   LedRGB colors[8] = {
-    {0, 0, 0},       // 0 -> if "0" and powerOff
+    {15, 0, 0},       // 0 -> if "0" and powerOff
     {0, 0, 255},     // 1 -> Init in progress
     {255, 140, 0},   // 2 -> WiFi problem
     {255, 0, 0},     // 3 -> big error
@@ -81,8 +81,9 @@ void setInfoColor(byte i)
     {25, 255, 80},   // 6 -> if "0" and powerOn and source "1" (RPi3/Phone)
     {255, 0, 255}    // 7 -> if powerOff and error (for blinking)
   };
-  ledSupport.setColor(LED_PIN_MAIN, 0, colors[i]);
+  ledSupport.setColor(0, colors[i]);
   last_led_color = i;
+  Serial.println(i);
 }
 
 void setInfoLed()
@@ -124,7 +125,7 @@ void wachdogLed()
 
 void setMainColor(LedRGB rgb)
 {
-  setLedColor(LED_PIN_MAIN, 0, rgb);
+  setLedColor(0, rgb);
   last_led_color = 255;
   // restet wachdog,: give time to see message :)
   timer0_write(ESP.getCycleCount() + WACHDOG_INTERVAL);
@@ -132,12 +133,12 @@ void setMainColor(LedRGB rgb)
 
 void setBackColor(LedRGB rgb)
 {
-  ledSupport.setColor(LED_PIN_MAIN, 1, rgb);
+  ledSupport.setColor(1, rgb);
 }
 
-void setLedColor(uint16_t pin, uint8_t id, LedRGB rgb)
+void setLedColor(uint8_t id, LedRGB rgb)
 {
-  ledSupport.setColor(pin, id, rgb);
+  ledSupport.setColor(id, rgb);
 }
 
 void changeSource(String src)
@@ -160,10 +161,9 @@ void initLed()
 {
   Serial.println("Init LedSupport");
   ledSupport.init();
-  ledSupport.addLedPin(LED_PIN_MAIN, 2);
   
   //ledSupport.setColor(LED_PIN_MAIN, 1, {255, 140, 0});
-  ledSupport.setDimmer(20, LED_PIN_MAIN, 0);
+  ledSupport.setDimmer(20, 0);
   setInfoLed();
   Serial.println("LedSupport Initialized");
 }
@@ -220,7 +220,7 @@ void initRelayModules()
 
 void setup(void)
 {
-  system_update_cpu_freq(SYS_CPU_160MHZ);
+  //system_update_cpu_freq(SYS_CPU_160MHZ);
   initRelayModules();
   
   Serial.begin(115200);
@@ -246,6 +246,7 @@ void loop(void)
 {
   serverRich.handleClient();
 }
+
 
 
 
